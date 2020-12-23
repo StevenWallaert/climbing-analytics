@@ -1,0 +1,385 @@
+---
+title: |
+  Resultaten Enquête 
+  Deel 1: Portret van de deelnemers
+description: |
+  In deze eerste post geef ik een overzicht van hoe de groep van klimmers die hebben deelgenomen er uitziet. Zowel leeftijd, geslacht, als meer klimgerelateerde gegevens komen aan bod.
+date: 12-15-2020
+output:
+  distill::distill_article:
+    self_contained: false
+draft: true
+editor_options: 
+  chunk_output_type: inline
+lang: dutch
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library("tidyverse")
+library("lubridate")
+
+klimmen <- read_csv("../../../data/klimmen.csv", na = "Niet van toepassing")
+
+glimpse(klimmen)
+
+# Timestamp -----------
+
+
+klimmen <- klimmen %>%
+  mutate(Timestamp = mdy_hms(Timestamp))
+
+# Klimzaal ------
+
+klimmen %>%
+  count(Klimzaal, sort = T)
+
+# aangezien zoveel unieke --> nodig om aan te passen
+
+klimmen <- klimmen %>%
+  mutate(
+    Klimzaal = case_when(
+      str_detect(Klimzaal, "^[Bb]lue|[Bb][Bb][Hh]") ~ "Blueberry hill",
+      str_detect(Klimzaal, "^[Bb]io|Blea") ~ "Biover Bleau",
+      str_detect(Klimzaal, "[Bb]rugge") ~ "Bloso Brugge",
+      str_detect(Klimzaal, "[Bb]ala") ~ "Balance",
+      str_detect(Klimzaal, "[Rr]hino") ~ "Rhino",
+      str_detect(Klimzaal, "[Bb]lack") ~ "Black Box Boulder",
+      str_detect(Klimzaal, "[Kk]lima") ~ "Klimax",
+      str_detect(Klimzaal, "[wW]all") ~ "Wallstreet",
+      str_detect(Klimzaal, "Oym|[Oo]lym") ~ "Olympia",
+      str_detect(Klimzaal, "[Oo]ostho") ~ "Den Oosthoek",
+      str_detect(Klimzaal, "[Cc]ity") ~ "City Lizard",
+      str_detect(Klimzaal, "[bB]lok") ~ "Blok",
+      str_detect(Klimzaal, "[sS]tord") ~ "Stordeur",
+      str_detect(Klimzaal, ".") ~ Klimzaal
+    )
+  ) 
+
+# klimgraden als ordered factor ----
+
+klimmen <- klimmen %>%
+  mutate(across(matches("Outdoor_.._boulder"), tolower)) %>%
+  mutate(across(
+    c(Indoor_RP_toprope:Outdoor_RP_lead,
+      Outdoor_RP_boulder:Outdoor_OS_lead, 
+      Outdoor_OS_boulder), factor, levels = c(
+    "<5a", "5a", "5b", "5c", "6a", "6a+", "6b", "6b+", "6c", "6c+",
+    "7a", "7a+", "7b", "7b+", "7c", "7c+", "8a", "8a+", "8b", ">8b"),
+    ordered = T
+    )
+  ) %>% 
+  mutate(across(matches("Indoor_.._boulder"),
+                factor,
+                levels = c(
+                  "Groen", "Geel", "Oranje", "Blauw", "Rood", "Zwart", "Wit", ">Wit"
+                ),
+                ordered = T)) 
+klim <- klimmen
+N <- dim(klim)[1]
+options(digits = 1)
+
+# to percent
+to_percent <- function(n){
+  paste0(round(n/sum(n)*100,0), "%")
+}
+```
+
+```{r}
+theme_set(theme_classic())
+house_color = "#66c2a5"
+house_color2 = "#fc8d62"
+```
+
+## Woord vooraf
+
+Onderstaande (en toekomstige) resultaten moeten puur 'verkennend' gezien worden. Dit is een hobbyproject, geen wetenschappelijke studie. Neem de resultaten dus gerust met een korreltje zout!
+
+## Aantal deelnemende klimmers
+
+```{r Aantal}
+aantal <- tibble(x = 0,
+                y = 0,
+                label = N)
+
+ggplot(aantal, aes(x,y, label = label)) +
+  geom_text(size = 60, color = house_color) +
+  theme_void()
+```
+
+
+## Geslacht
+
+Ongeveer **1 op `r round(1/mean(klim$Geslacht == "Vrouw"), 0)`** van de klimmers waren **vrouwen**. 
+
+```{r}
+caption = "Verdeling van geslacht onder de klimmers."
+```
+
+
+```{r Geslacht, fig.cap=caption}
+label_positions <- tibble(label = c(paste0("Man\n", round(mean(klim$Geslacht == "Man")*100,1), "%"), paste0("Vrouw\n", round(mean(klim$Geslacht == "Vrouw")*100,1), "%")),
+                          x = c(2,2),
+                          y = c(52, 12))
+
+klim %>%
+  count(Geslacht) %>%
+  ggplot(aes(x=2, y=n, fill = Geslacht)) +
+  geom_col() +
+  coord_polar(theta = "y", start = pi/7) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_void() +
+  xlim(.2,2.5) +
+  geom_text(data = label_positions, aes(x,y, label = label), inherit.aes = F, color = "#222222") +
+  theme(legend.position = "none")
+```
+
+
+
+## Leeftijd
+
+Qua leeftijd deed een mooie verscheidenheid aan klimmers mee aan de enquête. De **jongste** klimmer was **`r min(klim$Leeftijd)`** jaar en de **oudste `r max(klim$Leeftijd)`** jaar. 
+
+De **helft** van de klimmers had een leeftijd van **`r median(klim$Leeftijd)`** jaar **of jonger**, de **andere helft** was even oud of **ouder**. 
+
+```{r}
+caption = paste0("Verdeling van leeftijd onder de klimmers. De streepjeslijn toont de mediane leeftijd (", median(klim$Leeftijd), " jaar).")
+```
+
+
+```{r Leeftijd, fig.cap=caption}
+
+klim %>%
+  ggplot(aes(Leeftijd)) +
+  geom_histogram(binwidth = 5, boundary = 20, col = "white", fill = house_color) +
+  geom_vline(xintercept = median(klim$Leeftijd), color = "#222222",
+             linetype = "dashed") +
+  labs(y = "Aantal klimmers") +
+  scale_x_continuous(breaks = seq(0,65,5)) +
+  stat_bin(binwidth = 5, boundary = 20, geom="text", aes(label = paste0(round(..count../N*100, 0), "%"), vjust = -0.3))
+  
+```
+
+De **verdeling** van leeftijd ziet er **anders** uit voor **mannen en vrouwen**.
+
+
+```{r}
+median_leeftijd <- klim %>%
+  group_by(Geslacht) %>%
+  summarise(mediaan = median(Leeftijd))
+
+caption = paste0("Verdeling van leeftijd per geslacht. De streepjeslijnen tonen de mediane leeftijden (", median_leeftijd$mediaan[1], " en ", median_leeftijd$mediaan[2], " jaar.) Percentages zijn berekend op mannen en vrouwen samen.")
+```
+
+```{r Leeftijd-per-geslacht, fig.cap=caption}
+klim %>%
+  ggplot(aes(Leeftijd, fill = Geslacht)) +
+  geom_histogram(binwidth = 5, boundary = 20, col = "white") +
+  geom_vline(data = median_leeftijd, aes(xintercept = mediaan), color = "#222222",
+             linetype = "dashed") +
+  labs(y = "Aantal klimmers") +
+  scale_fill_brewer(palette = "Set2") +
+  facet_grid(Geslacht ~ .) +
+  theme(legend.position = "none") +
+  scale_x_continuous(breaks = seq(0,70,5)) +
+    stat_bin(binwidth = 5, boundary = 20, geom="text", aes(label = scales::percent(..count../N,1), vjust = -0.3)) +
+  coord_cartesian(ylim = c(0,17))
+```
+
+
+
+Het lijkt erop dat er nagenoeg **geen verschil** is **tot** een leeftijd van rond de **20-25 jaar**, daarna zien we een afname van het aantal vrouwen met toenemende leeftijd, terwijl het aantal bij mannen eerst nog toeneemt tot 30-35 jaar vooraleer hun aantal ook afneemt met toenemende leeftijd.
+
+## Lid van een bergsportvereniging
+
+```{r}
+caption = "Verdeling lidmaatschap bergsportvereniging."
+```
+
+
+```{r Vereniging, fig.cap=caption}
+label_positions <- tibble(label = c(paste0("Lid\n", round(mean(klim$Vereniging == "Ja")*100,1), "%"), paste0("Geen lid\n", round(mean(klim$Vereniging == "Nee")*100,1), "%")),
+                          x = c(2,2),
+                          y = c(44, 7))
+
+
+klim %>%
+  count(Vereniging) %>%
+  ggplot(aes(x=2, y=n, fill = Vereniging)) +
+  geom_col() +
+  coord_polar(theta = "y", start = pi/7) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_void() +
+  xlim(.2,2.5) +
+  geom_text(data = label_positions, aes(x,y, label = label), inherit.aes = F, color = "#222222") +
+  theme(legend.position = "none")
+```
+
+## Jaren klimervaring
+
+Klimervaring varieerde tussen **`r min(klim$Klimervaring)`** en **`r max(klim$Klimervaring)`** jaar.
+
+De **helft** van de klimmers klom al **`r median(klim$Klimervaring)`** jaar **of minder**, de **andere helft** had evenveel ervaring of **meer**.
+
+```{r}
+caption = paste0("Verdeling jaren klimervaring, streepjeslijn geeft de mediane klimervaring weer (", median(klim$Klimervaring)," jaar).")
+```
+
+
+```{r klimervaring, fig.cap=caption}
+ggplot(klim, aes(Klimervaring)) +
+  geom_histogram(color = "white", binwidth = 2.5, boundary = 5, fill = house_color) +
+  labs(x = "Aantal jaren klimervaring",
+       y = "Aantal klimmers") +
+  geom_vline(xintercept = median(klim$Klimervaring), linetype = "dashed", color = "#222222") +
+  scale_x_continuous(breaks = seq(0,35,5)) +
+  scale_fill_brewer(palette = "Set2") +
+  stat_bin(binwidth = 2.5, boundary = 20, geom="text", aes(label = scales::percent(..count../N,1), vjust = -0.3))
+```
+
+De **piekjes** rond **10, 15, 20 en 30 jaar** zijn wellicht het resultaat van mensen die een **schatting** gegeven hebben. Ronde getallen doen het dan meestal goed.
+
+
+## Klimzaal
+
+
+```{r, fig.cap="Verdeling klimzalen."}
+klim %>%
+  ggplot(aes(fct_infreq(fct_lump_n(Klimzaal, 9)), fill = fct_infreq(fct_lump_n(Klimzaal, 9))) ) +
+  geom_bar(show.legend = F) +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2), labels = c("Other" = "Andere")) +
+  labs(x = "",
+       y = "Aantal klimmers") +
+  stat_count(mapping = aes(label = scales::percent(..prop.., 1), group =1), geom = "text", vjust = -0.3) +
+  scale_fill_brewer(palette = "Set3")
+  
+```
+
+```{r}
+klimmen %>%
+  count(Klimzaal) %>% 
+  filter(n == 1) %>%
+  pull(Klimzaal) -> andere_klimzalen
+
+klimmen %>%
+  count(Klimzaal) %>% 
+  filter(n == 2) %>%
+  pull(Klimzaal) -> andere_klimzalen_2
+```
+
+Andere klimzalen: 
+
+
+`r andere_klimzalen_2`, telkens 2 klimmers.
+
+
+`r andere_klimzalen`, telkens 1 klimmer.
+
+## Aantal dagen klimmen per week
+
+De **helft** van de klimmers klimmen **2 keer of minder per week**. De andere helft klimt 2 keer of meer.
+
+Enkele klimmers gaven aan minder dan 1 keer per 2 weken te kunnen klimmen. Niemand klimt meer dan 4 a 5 keer per week.
+
+```{r, fig.cap="Verdeling klimdagen per week. Stippellijn geeft de mediane hoeveelheid klimdagen per week aan."}
+klim %>%
+  ggplot(aes(Dagen_klimmen)) +
+  geom_histogram(binwidth = 0.5, center = 1, color = "white", fill = house_color) +
+  labs(x = "Dagen klimmen per week",
+       y = "Aantal klimmers") +
+  stat_bin(binwidth = 0.5, center = 0, geom="text", aes(label = scales::percent(..count../N, 1), vjust = -0.3)) +
+  scale_x_continuous(breaks = seq(0,7,0.5)) +
+  geom_vline(xintercept = median(klim$Dagen_klimmen), linetype = "dashed", color = "#222222")
+```
+
+## Dagen alternatieve training per week, gericht op klimmen: kracht, lenigheid, ...
+
+Bijna **de helft** van de klimmers doet verder **geen specifieke alternatieve trainingen**.
+
+
+```{r, fig.cap="Verdeling aantal alternatieve trainingen, gericht op klimmen, per week."}
+klim %>%
+  ggplot(aes(Dagen_alternatief_specifiek)) +
+  geom_histogram(binwidth = 0.5, center = 1, color = "white", fill = house_color) +
+  labs(x = "Alternatieve trainingen per week",
+       y = "Aantal klimmers") +
+  scale_x_continuous(breaks = seq(0,7,0.5)) +
+  stat_bin(binwidth = 0.5, center = 0, geom="text", aes(label = scales::percent(..count../N, 1), vjust = -0.3))
+```
+
+## Dagen alternatieve trainingen per week, niet gericht op klimmen: lopen, zwemmen, ...
+
+```{r, fig.cap="Verdeling aantal alternatieve trainingen, niet specifiek gericht op klimmen, per week."}
+klim %>%
+  ggplot(aes(Dagen_alternatief_algemeen)) +
+  geom_histogram(binwidth = 0.5, center = 1, color = "white", fill = house_color) +
+  labs(x = "Alternatieve trainingen per week",
+       y = "Aantal klimmers") +
+  scale_x_continuous(breaks = seq(0,7,0.5)) +
+  stat_bin(binwidth = 0.5, center = 0, geom="text", aes(label = scales::percent(..count../N, 1), vjust = -0.3))
+```
+
+## Disciplines
+
+### Indoor
+
+**Toprope** lengteklimmen werd **het vaakst** aangeduid, gevolgd door boulderen.
+
+Een aanzienlijk deel van de deelnemers deed ook aan indoor lead.
+
+Een **zeer klein deel** van de deelnemers deed aan **speedklimmen**.
+
+```{r, fig.cap="Verdeling indoordisciplines."}
+klim %>%
+  select(Indoor_toprope:Outdoor_alpinisme) %>%
+  select(starts_with("In")) %>%
+  pivot_longer(everything(), names_to = "question") %>%
+  mutate(question = str_replace(question, "_", " ")) %>%
+  ggplot(aes(x = value, fill = value)) +
+  geom_bar(show.legend = F) +
+  stat_count(mapping = aes(label = scales::percent(..prop.., 1), group = 1), geom = "text", vjust = -0.3) +
+  facet_grid(.~fct_relevel(question, c("Indoor toprope",
+                                      "Indoor boulder",
+                                      "Indoor lead",
+                                      "Indoor speed"))) +
+  scale_fill_brewer(palette = "Set2") +
+  coord_cartesian(ylim = c(0,111)) +
+  labs(x = "",
+       y = "Aantal klimmers")
+```
+### Outdoor
+
+Outdoor **single pitch** klimmen was **het populairst**, opnieuw gevolgd door boulderen.
+
+Een **kleiner deel** gaf aan om aan **alpinisme** of **trad klimmen** te doen.
+
+```{r, fig.cap="Verdeling outdoordisciplines"}
+klim %>%
+  select(Indoor_toprope:Outdoor_alpinisme) %>%
+  select(starts_with("Out")) %>%
+  pivot_longer(everything(), names_to = "question") %>%
+  mutate(question = str_replace(question, "_", " ")) %>%
+  ggplot(aes(x = value, fill = value)) +
+  geom_bar(show.legend = F) +
+  stat_count(mapping = aes(label = scales::percent(..prop.., 1), group = 1), geom = "text", vjust = -0.3) +
+  facet_grid(.~fct_relevel(question, c("Outdoor singlepitch",
+                                      "Outdoor boulder", 
+                                      "Outdoor multipitch",
+                                      "Outdoor alpinisme",
+                                      "Outdoor trad"))) +
+  scale_fill_brewer(palette = "Set2") +
+  coord_cartesian(ylim = c(0,92)) +
+  labs(x = "",
+       y = "Aantal klimmers")
+```
+
+
+```{r}
+
+```
+
+
+## 
+
+
