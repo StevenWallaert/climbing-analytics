@@ -1,12 +1,14 @@
 name: "blog"
-title: "Klimmen en data"
+title: "Vragenlijst over klimmen"
 description: |
   Resultaten van een kleinschalige enquête over klimmen.
-base_url: https://users.ugent.be/~swallaer/climbing/
+base_url: https://vragenlijst-klimmen.netlify.app/
 output_dir: "_site"
 collections:
   posts:
     authors_metadata: false
+    disqus: vragenlijst-klimmen
+    share: [twitter, facebook, pinterest]
 navbar:
   right:
     - text: "Home"
