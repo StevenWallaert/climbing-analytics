@@ -3,7 +3,7 @@ title: |
   Resultaten Enquête 
   Deel 1: Portret van de deelnemers
 description: |
-  In deze eerste post geef ik een overzicht van hoe de groep van klimmers die hebben deelgenomen er uitziet. Zowel leeftijd, geslacht, als meer klimgerelateerde gegevens komen aan bod.
+  In deze eerste post kijken we naar een overzicht van de samenstelling van de deelnemers. Zowel leeftijd, geslacht, als meer klimgerelateerde gegevens komen aan bod.
 date: 12-23-2020
 output:
   distill::distill_article:
@@ -53,6 +53,7 @@ klimmen <- klimmen %>%
       str_detect(Klimzaal, "[Cc]ity") ~ "City Lizard",
       str_detect(Klimzaal, "[bB]lok") ~ "Blok",
       str_detect(Klimzaal, "[sS]tord") ~ "Stordeur",
+      str_detect(Klimzaal, "[Aa]lp[ha]") ~ "Alpamayo",
       str_detect(Klimzaal, ".") ~ Klimzaal
     )
   ) 
@@ -86,6 +87,7 @@ to_percent <- function(n){
 }
 ```
 
+
 ```{r}
 theme_set(theme_classic())
 house_color = "#66c2a5"
@@ -94,7 +96,7 @@ house_color2 = "#fc8d62"
 
 ## Woord vooraf
 
-Onderstaande (en toekomstige) resultaten moeten puur 'verkennend' gezien worden. Dit is een hobbyproject, geen wetenschappelijke studie. Neem de resultaten dus gerust met een korreltje zout!
+Onderstaande (en toekomstige) resultaten moeten puur 'verkennend' gezien worden. Dit is een hobbyproject, geen wetenschappelijke studie. Neem de resultaten dus gerust met een korrel zout, dat doe ik zelf trouwens ook!
 
 ## Aantal deelnemende klimmers
 
@@ -184,7 +186,7 @@ klim %>%
   theme(legend.position = "none") +
   scale_x_continuous(breaks = seq(0,70,5)) +
     stat_bin(binwidth = 5, boundary = 20, geom="text", aes(label = scales::percent(..count../N,1), vjust = -0.3)) +
-  coord_cartesian(ylim = c(0,17))
+  coord_cartesian(ylim = c(0,18))
 ```
 
 
@@ -344,7 +346,7 @@ klim %>%
                                       "Indoor lead",
                                       "Indoor speed"))) +
   scale_fill_brewer(palette = "Set2") +
-  coord_cartesian(ylim = c(0,111)) +
+  coord_cartesian(ylim = c(0,113)) +
   labs(x = "",
        y = "Aantal klimmers")
 ```
@@ -398,7 +400,7 @@ klim %>%
     ),
     Aantal = colDef(
       style = function(x){
-        orange_pal <- function(x) rgb(colorRamp(c("#f7fcf5", "#74c476"))(x), maxColorValue = 255)
+        orange_pal <- function(x) rgb(colorRamp(c("#f7fcf5", house_color))(x), maxColorValue = 255)
         normalized <- (x - min(.$Aantal))/(max(.$Aantal) - min(.$Aantal))
         color <- orange_pal(normalized)
         list(background = color)
@@ -430,14 +432,14 @@ klim %>%
                                       "Outdoor alpinisme",
                                       "Outdoor trad"))) +
   scale_fill_brewer(palette = "Set2") +
-  coord_cartesian(ylim = c(0,92)) +
+  coord_cartesian(ylim = c(0,93)) +
   labs(x = "",
        y = "Aantal klimmers")
 ```
 
 Een vraag die zich misschien meteen laat stellen is of de trad klimmers misschien allen ook alpinisten zijn? 
 
-Op onderstaande figuur zien we dat er trad klimmers zijn die niet aan alpinisme doen en alpinisten die niet aan tradklimmen doen.
+Op onderstaande figuur zien we dat er trad klimmers zijn die niet aan alpinisme doen en omgekeerd.
 
 ```{r}
 klim %>%
@@ -508,7 +510,7 @@ klim %>%
     ),
     Aantal = colDef(
       style = function(x){
-        orange_pal <- function(x) rgb(colorRamp(c("#f7fcf5", "#74c476"))(x), maxColorValue = 255)
+        orange_pal <- function(x) rgb(colorRamp(c("#f7fcf5", house_color))(x), maxColorValue = 255)
         normalized <- (x - min(.$Aantal))/(max(.$Aantal) - min(.$Aantal))
         color <- orange_pal(normalized)
         list(background = color)
@@ -524,9 +526,11 @@ klim %>%
 
 In dit eerste deel hebben we gekeken naar de samenstelling van de steekproef. 
 
-Volgende keer gaan we in op de **klimgraden**. 
+Volgende keer gaan we in op **klimgraden**. Heb je bepaalde **verwachtingen** of ben je benieuwd naar **bepaalde verbanden** met klimgraden? Laat dan zeker een **reactie** na!
 
-Bedankt voor het lezen, en tot binnenkort!
 
+**Bedankt** voor het lezen, en tot binnenkort! 
+
+***
 
 De vragenlijst nog niet ingevuld? Vul ze dan snel [hier](https://forms.gle/3RH9RteDN4RvWBNu6) in.
