@@ -1,0 +1,562 @@
+---
+title: |
+  Resultaten Deel 2: Verdeling Moeilijkheidsgraden
+description: |
+  In dit deel gaan we in op de verdelingen van maximale niveau's voor de verschillende disciplines en stijlen. 
+date: 01-02-2021
+output:
+  distill::distill_article:
+    self_contained: false
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+library("tidyverse")
+library("lubridate")
+library("reactable")
+xaringanExtra::use_panelset()
+klimmen <- read_csv("../../data/klimmen.csv", na = "Niet van toepassing")
+
+# Timestamp -----------
+
+
+klimmen <- klimmen %>%
+  mutate(Timestamp = mdy_hms(Timestamp))
+
+# Klimzaal ------
+
+klimmen %>%
+  count(Klimzaal, sort = T)
+
+# aangezien zoveel unieke --> nodig om aan te passen
+
+klimmen <- klimmen %>%
+  mutate(
+    Klimzaal = case_when(
+      str_detect(Klimzaal, "^[Bb]lue|[Bb][Bb][Hh]") ~ "Blueberry hill",
+      str_detect(Klimzaal, "^[Bb]io|Blea") ~ "Biover Bleau",
+      str_detect(Klimzaal, "[Bb]rugge") ~ "Bloso Brugge",
+      str_detect(Klimzaal, "[Bb]ala") ~ "Balance",
+      str_detect(Klimzaal, "[Rr]hino") ~ "Rhino",
+      str_detect(Klimzaal, "[Bb]lack") ~ "Black Box Boulder",
+      str_detect(Klimzaal, "[Kk]lima") ~ "Klimax",
+      str_detect(Klimzaal, "[wW]all") ~ "Wallstreet",
+      str_detect(Klimzaal, "Oym|[Oo]lym") ~ "Olympia",
+      str_detect(Klimzaal, "[Oo]ostho") ~ "Den Oosthoek",
+      str_detect(Klimzaal, "[Cc]ity") ~ "City Lizard",
+      str_detect(Klimzaal, "[bB]lok") ~ "Blok",
+      str_detect(Klimzaal, "[sS]tord") ~ "Stordeur",
+      str_detect(Klimzaal, "[Aa]lp[ha]") ~ "Alpamayo",
+      str_detect(Klimzaal, ".") ~ Klimzaal
+    )
+  ) 
+
+# klimgraden als ordered factor ----
+
+klimmen <- klimmen %>%
+  mutate(across(matches("Outdoor_.._boulder"), tolower)) %>%
+  mutate(across(
+    c(Indoor_RP_toprope:Outdoor_RP_lead,
+      Outdoor_RP_boulder:Outdoor_OS_lead, 
+      Outdoor_OS_boulder), factor, levels = c(
+    "<5a", "5a", "5b", "5c", "6a", "6a+", "6b", "6b+", "6c", "6c+",
+    "7a", "7a+", "7b", "7b+", "7c", "7c+", "8a", "8a+", "8b", ">8b"),
+    ordered = T
+    )
+  ) %>% 
+  mutate(across(matches("Indoor_.._boulder"),
+                factor,
+                levels = c(
+                  "Groen", "Geel", "Oranje", "Blauw", "Rood", "Zwart", "Wit", ">Wit"
+                ),
+                ordered = T)) 
+klim <- klimmen
+N <- dim(klim)[1]
+options(digits = 1)
+
+# to percent
+to_percent <- function(n){
+  paste0(round(n/sum(n)*100,0), "%")
+}
+theme_set(theme_bw())
+house_color = "#66c2a5"
+house_color2 = "#fc8d62"
+```
+
+```{r}
+green <- "green"
+orange <- "orange"
+blue <- "blue"
+red <- "darkred"
+black <- "#444444"
+white <- "#777777"
+insane <- "steelblue"
+```
+
+## Verdeling maximaal niveau
+
+Onderstaande grafieken tonen voor iedere graad het percentage van de bevraagde klimmers dat de betreffende graad (maximaal, de voorbije 6 maand) kan klimmen in de gegeven stijl.
+
+### Indoor top rope
+
+#### Indoor top rope: Redpoint 
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+
+verdeling_samen <- function(x){
+  x <- enquo(x)
+  klim %>%
+    drop_na(!!x) %>%
+    pull(!!x) %>% length() -> N
+  klim %>%
+  count(!!x) %>%
+  drop_na() %>%
+  mutate(percent = n/sum(n),
+         c.percent = cumsum(percent)) %>%
+  mutate(c.percent = 1-lag(c.percent)) %>%
+    mutate(c.percent = ifelse(is.na(c.percent), 1, c.percent)) %>%
+  ggplot(aes(x=!!x, y=c.percent)) +
+  geom_col(fill = house_color) +
+  scale_y_continuous(breaks = seq(0,1,0.1), labels = scales::percent_format(accuracy = 1) ) +
+  geom_text(aes(label = paste0(round(c.percent*100,0),"%")), vjust = -0.3) +
+  labs(x = "",
+       y = "Percentage klimmers",
+       caption = paste0("Berekend op ", N, " klimmers"))
+}
+
+verdeling_samen(Indoor_RP_toprope)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen <- function(x){
+  x <- enquo(x)
+  klim %>%
+    drop_na(!!x) %>%
+    filter(Geslacht == "Vrouw") %>%
+    pull(!!x) %>% length() -> N
+  klim %>%
+  group_by(Geslacht) %>%
+  count(!!x) %>%
+  drop_na() %>%
+  mutate(percent = n/sum(n),
+         c.percent = cumsum(percent)) %>%
+  mutate(c.percent = 1-lag(c.percent)) %>%
+    mutate(c.percent = ifelse(is.na(c.percent), 1, c.percent)) %>%
+  filter(Geslacht == "Vrouw") %>%
+  ggplot(aes(x=!!x, y=c.percent)) +
+  geom_col(fill = house_color2, show.legend = F) +
+  scale_y_continuous(breaks = seq(0,1,0.1), labels = scales::percent_format(accuracy = 1) ) +
+  geom_text(aes(label = paste0(round(c.percent*100,0),"%")), vjust = -0.3) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "",
+       y = "Percentage klimmers",
+       caption = paste0("Berekend op ", N, " klimmers"))
+}
+
+verdeling_vrouwen(Indoor_RP_toprope)
+
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen <- function(x){
+  x <- enquo(x)
+  klim %>%
+    drop_na(!!x) %>%
+    filter(Geslacht == "Man") %>%
+    pull(!!x) %>% length() -> N
+  klim %>%
+  group_by(Geslacht) %>%
+  count(!!x) %>%
+  drop_na() %>%
+  mutate(percent = n/sum(n),
+         c.percent = cumsum(percent)) %>%
+  mutate(c.percent = 1-lag(c.percent)) %>%
+    mutate(c.percent = ifelse(is.na(c.percent), 1, c.percent)) %>%
+  filter(Geslacht == "Man") %>%
+  ggplot(aes(x=!!x, y=c.percent)) +
+  geom_col(fill = house_color, show.legend = F) +
+  scale_y_continuous(breaks = seq(0,1,0.1), labels = scales::percent_format(accuracy = 1) ) +
+  geom_text(aes(label = paste0(round(c.percent*100,0),"%")), vjust = -0.3) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "",
+       y = "Percentage klimmers",
+       caption = paste0("Berekend op ", N, " klimmers"))
+}
+
+verdeling_mannen(Indoor_RP_toprope)
+```
+
+:::
+
+:::::
+
+#### Indoor top rope: On sight
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Indoor_OS_toprope)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Indoor_OS_toprope)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Indoor_OS_toprope)
+```
+
+:::
+
+:::::
+
+
+
+### Indoor lead
+
+#### Indoor lead: Redpoint
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Indoor_RP_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Indoor_RP_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Indoor_RP_lead)
+```
+
+:::
+
+:::::
+
+
+#### Indoor lead: On sight
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Indoor_OS_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Indoor_OS_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Indoor_OS_lead)
+```
+
+:::
+
+:::::
+
+
+
+### Indoor boulder
+
+#### Indoor boulder: Redpoint
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Indoor_RP_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Indoor_RP_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Indoor_RP_boulder)
+```
+
+:::
+
+:::::
+
+
+#### Indoor boulder: On sight
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Indoor_OS_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Indoor_OS_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Indoor_OS_boulder)
+```
+
+:::
+
+:::::
+
+
+### Outdoor lead
+
+#### Outdoor lead: Redpoint
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Outdoor_RP_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Outdoor_RP_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Outdoor_RP_lead)
+```
+
+:::
+
+:::::
+
+
+#### Outdoor lead: On sight
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Outdoor_OS_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Outdoor_OS_lead)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Outdoor_OS_lead)
+```
+
+:::
+
+:::::
+
+
+### Outdoor boulder
+
+#### Outdoor boulder: Redpoint
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Outdoor_RP_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Outdoor_RP_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Outdoor_RP_boulder)
+```
+
+:::
+
+:::::
+
+
+#### Outdoor boulder: On sight
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samen]{.panel-name}
+
+```{r}
+verdeling_samen(Outdoor_OS_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Vrouwen]{.panel-name}
+
+```{r}
+verdeling_vrouwen(Outdoor_OS_boulder)
+```
+
+:::
+
+::: {.panel}
+
+[Mannen]{.panel-name}
+
+```{r}
+verdeling_mannen(Outdoor_OS_boulder)
+```
+
+:::
+
+:::::
+
+
+## Wordt vervolgd
+
+In de volgende delen zullen we ingaan op de relaties tussen on sight en redpoint klimmen, of tussen top rope en lead, binnen vs. buiten etc.
+
+
+

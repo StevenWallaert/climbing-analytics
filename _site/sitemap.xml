@@ -2,14 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" version="1.0">
   <url>
     <loc>https://vragenlijst-klimmen.netlify.app/about.html</loc>
-    <lastmod>2020-12-24T13:05:44+01:00</lastmod>
+    <lastmod>2021-01-09T20:39:40+01:00</lastmod>
   </url>
   <url>
     <loc>https://vragenlijst-klimmen.netlify.app/</loc>
-    <lastmod>2020-12-23T16:51:14+01:00</lastmod>
+    <lastmod>2020-12-26T13:37:30+01:00</lastmod>
+  </url>
+  <url>
+    <loc>https://vragenlijst-klimmen.netlify.app/posts/2021-01-02-resultaten-deel-3-samenhang-moeilijkheidsgraden/</loc>
+    <lastmod>2021-01-09T20:17:37+01:00</lastmod>
+  </url>
+  <url>
+    <loc>https://vragenlijst-klimmen.netlify.app/posts/2020-12-26-resultaten-deel-2-klimgraden/</loc>
+    <lastmod>2021-01-09T20:26:04+01:00</lastmod>
   </url>
   <url>
     <loc>https://vragenlijst-klimmen.netlify.app/posts/2020-12-23-resultaten-enqute-deel-1-portret-van-de-deelnemers/</loc>
-    <lastmod>2020-12-24T13:28:39+01:00</lastmod>
+    <lastmod>2020-12-24T13:28:40+01:00</lastmod>
   </url>
 </urlset>

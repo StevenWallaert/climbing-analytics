@@ -1,18 +1,26 @@
 name: "blog"
 title: "Vragenlijst over klimmen"
 description: |
-  Resultaten van een kleinschalige enquête over klimmen.
-base_url: https://vragenlijst-klimmen.netlify.app/
+  Resultaten van een kleinschalige vragenlijst over klimmen.
+base_url: https://vragenlijst-klimmen.netlify.app
+google_analytics: "G-PL67KXJYR7"
 output_dir: "_site"
 collections:
   posts:
     authors_metadata: false
     disqus: vragenlijst-klimmen
     share: [twitter, facebook, pinterest]
+cookie_consent:
+  style: simple
+  type: express
+  palette: light
+  lang: nl
 navbar:
   right:
     - text: "Home"
       href: index.html
-    - icon: fa fa-rss
-      href: index.xml
+    - text: "About"
+      href: about.html
+    - icon: fa fa-github
+      href: https://github.com/StevenWallaert/climbing-analytics 
 output: distill::distill_article

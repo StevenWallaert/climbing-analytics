@@ -1,10 +1,15 @@
 ---
 title: "Over deze blog"
-description: |
-  
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+Hey! Ik ben Steven, klimmer met [Blueberry Hill](https://www.blueberry-hill.be/) en [Black Box Boulder](https://www.blackboxboulder.be/) als *home gyms*.
+
+Dit project is ontstaan vanuit een nieuwsgierigheid naar de verdeling van klimniveau’s onder de klimmers in onze omgeving (West-Vlaanderen en Gent dan maar?) en uiteraard vanuit mijn interesse in statistiek. [Deze blogpost](https://www.naftaliharris.com/blog/climbing-statistical-analysis/) uit 2014 gaf me de inspiratie om tot actie over te gaan.
+
+Deze blog en alle inhoud werd volledig gemaakt in [R](https://www.r-project.org/), met [RStudio](https://rstudio.com/), [RMarkdown](https://rmarkdown.rstudio.com/), en [distill](https://rstudio.github.io/distill/). Alle broncode is terug te vinden op [Github](https://github.com/StevenWallaert/climbing-analytics).
+
+Een fout gevonden, of heb je een andere opmerking? Ik hoor het graag, dus laat van je horen! Je kan reageren op een post, een issue openen op Github, of je kan me mailen op wallaertsteven at gmail dot com.

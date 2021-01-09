@@ -1,0 +1,452 @@
+---
+title: "Resultaten Deel 3: Redpoint vs. On Sight"
+description: |
+  Hoeveel moeilijker is on sight klimmen dan redpoint klimmen? In dit deel maken we de vergelijking tussen beide stijlen...
+author: 
+date: 01-09-2021
+output:
+  distill::distill_article:
+    self_contained: false
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+library("tidyverse")
+library("lubridate")
+library("reactable")
+xaringanExtra::use_panelset()
+klimmen <- read_csv("../../data/klimmen.csv", na = "Niet van toepassing")
+
+# Timestamp -----------
+
+
+klimmen <- klimmen %>%
+  mutate(Timestamp = mdy_hms(Timestamp))
+
+# Klimzaal ------
+
+klimmen %>%
+  count(Klimzaal, sort = T)
+
+# aangezien zoveel unieke --> nodig om aan te passen
+
+klimmen <- klimmen %>%
+  mutate(
+    Klimzaal = case_when(
+      str_detect(Klimzaal, "^[Bb]lue|[Bb][Bb][Hh]") ~ "Blueberry hill",
+      str_detect(Klimzaal, "^[Bb]io|Blea") ~ "Biover Bleau",
+      str_detect(Klimzaal, "[Bb]rugge") ~ "Bloso Brugge",
+      str_detect(Klimzaal, "[Bb]ala") ~ "Balance",
+      str_detect(Klimzaal, "[Rr]hino") ~ "Rhino",
+      str_detect(Klimzaal, "[Bb]lack") ~ "Black Box Boulder",
+      str_detect(Klimzaal, "[Kk]lima") ~ "Klimax",
+      str_detect(Klimzaal, "[wW]all") ~ "Wallstreet",
+      str_detect(Klimzaal, "Oym|[Oo]lym") ~ "Olympia",
+      str_detect(Klimzaal, "[Oo]ostho") ~ "Den Oosthoek",
+      str_detect(Klimzaal, "[Cc]ity") ~ "City Lizard",
+      str_detect(Klimzaal, "[bB]lok") ~ "Blok",
+      str_detect(Klimzaal, "[sS]tord") ~ "Stordeur",
+      str_detect(Klimzaal, "[Aa]lp[ha]") ~ "Alpamayo",
+      str_detect(Klimzaal, ".") ~ Klimzaal
+    )
+  ) 
+
+# klimgraden als ordered factor ----
+
+klimmen <- klimmen %>%
+  mutate(across(matches("Outdoor_.._boulder"), tolower)) %>%
+  mutate(across(
+    c(Indoor_RP_toprope:Outdoor_RP_lead,
+      Outdoor_RP_boulder:Outdoor_OS_lead, 
+      Outdoor_OS_boulder), factor, levels = c(
+    "<5a", "5a", "5b", "5c", "6a", "6a+", "6b", "6b+", "6c", "6c+",
+    "7a", "7a+", "7b", "7b+", "7c", "7c+", "8a", "8a+", "8b", ">8b"),
+    ordered = T
+    )
+  ) %>% 
+  mutate(across(matches("Indoor_.._boulder"),
+                factor,
+                levels = c(
+                  "Groen", "Geel", "Oranje", "Blauw", "Rood", "Zwart", "Wit", ">Wit"
+                ),
+                ordered = T)) 
+klim <- klimmen
+N <- dim(klim)[1]
+options(digits = 1)
+
+# to percent
+to_percent <- function(n){
+  paste0(round(n/sum(n)*100,0), "%")
+}
+theme_set(theme_bw())
+house_color = "#66c2a5"
+house_color2 = "#fc8d62"
+```
+
+```{r}
+green <- "green"
+orange <- "orange"
+blue <- "blue"
+red <- "darkred"
+black <- "#444444"
+white <- "#777777"
+insane <- "steelblue"
+```
+
+# Verschil Redpoint - On sight
+
+Het is logisch dat **on sight** klimmen **moeilijker** is **dan redpoint** klimmen. Maar **hoeveel precies**? Dat is moeilijk te zeggen. Aan de hand van de antwoorden op de vragenlijst proberen we hier meer inzicht in te krijgen.
+
+## Indoor toprope
+
+Hieronder zien we voor iedere klimmer zijn/haar **max redpoint top rope niveau** in **verband** gebracht met zijn/haar **max on sight top rope niveau**. Hoe groter de stippen, hoe meer klimmers.
+
+De oranje lijn is de identiteitslijn: OS graad = RP graad.
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Indoor_OS_toprope, Indoor_RP_toprope) %>%
+  ggplot(aes(Indoor_RP_toprope, Indoor_OS_toprope)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  # geom_bin2d(show.legend = F) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Indoor_OS_toprope)) +
+  scale_x_discrete(limits = levels(klim$Indoor_RP_toprope)) +
+  #coord_equal() +
+  #geom_smooth(inherit.aes = F, mapping = aes(x=as.numeric(Indoor_RP_toprope), y = as.numeric(Indoor_OS_toprope)), method = "lm") +
+  theme(legend.position = "bottom") +
+  labs(x = "Indoor toprope: Redpoint",
+       y = "Indoor toprope: On sight",
+       size = "Aantal klimmers") 
+```
+
+Een aantal zaken vallen op:
+
+- Een **klein aantal** mensen gaf een **hoger on sight niveau** op **dan hun redpoint niveau**. Dit zijn de stippen boven de oranje lijn. Dat is eerder onverwacht, maar niet onmogelijk. Een mogelijke verklaring is dat deze mensen bijna alleen maar on sight klimmen als ze top ropen.
+
+- **Een deel** van de klimmers klimt **hetzelfde niveau on sight als redpoint** in top rope. Dat zijn de stippen op de oranje lijn.
+
+- Zoals te verwachten, klimt het **grootste deel** van de klimmers een **lager niveau**  **on sight** dan wanneer men redpoint klimt.
+
+- Het **'gat'** tussen on redpoint en on sight is trouwens **niet voor iedereen even groot**. Voor sommigen gaat het maar over 1 graad^[Ik reken voor het gemak een + ("plus")-graad als een volledige graad.] terwijl het maximum verval 7 graden betreft.
+
+Een interessante vraag zou zijn wat het onderscheid maakt tussen hen die weinig verval en veel verval kennen tussen redpoint en on sight niveau. We keren hier een andere keer op terug...
+
+
+### Hoe groot is het typische verval tussen redpoint en on sight top rope?
+
+Om op deze vraag te antwoorden hebben we voor iedere redpoint graad de mediane on sight graad berekend. 
+
+Hieronder staat het **mediane verval voor ieder maximaal redpointniveau** (top rope) weergegeven. De grootte van de stippen geeft een idee van de grootte van de groep klimmers waarop de mediaan is berekend^[Grofweg: hoe kleiner de stippen, hoe minder betrouwbaar].
+
+```{r, fig.height=5}
+rp_os <- function(rp, os, rev=FALSE){
+  rp <- enquo(rp)
+  os <- enquo(os)
+  if(rev){
+    klim %>%
+      group_by(!!rp) %>%
+      summarise(os = quantile(!!os, 0.5, type =1, na.rm = T), n = n()) %>%
+      drop_na() %>%
+      rownames_to_column("graad") %>%
+      pivot_longer(-c(graad,n), names_to = "stijl") %>%
+      ggplot(aes(x = fct_rev(stijl), y = value, group = graad)) +
+      geom_line(size = 1, color = house_color2) +
+      geom_point(aes(size = n), color = house_color, show.legend = F) +
+      labs(x = "",
+           y = "") +
+      scale_x_discrete(labels = c("Redpoint", "On sight"))
+  } else {
+    klim %>%
+      group_by(!!rp) %>%
+      summarise(os = quantile(!!os, 0.5, type =1, na.rm = T), n = n()) %>%
+      drop_na() %>%
+      rownames_to_column("graad") %>%
+      pivot_longer(-c(graad,n), names_to = "stijl") %>%
+      ggplot(aes(x = stijl, y = value, group = graad)) +
+      geom_line(size = 1, color = house_color2) +
+      geom_point(aes(size = n), color = house_color, show.legend = F) +
+      labs(x = "",
+           y = "") +
+      scale_x_discrete(labels = c("Redpoint", "On sight"))
+  }
+  
+}
+
+rp_os(Indoor_RP_toprope, Indoor_OS_toprope)
+```
+
+Hoeveel het verval juist bedraagt kan afgelezen worden van bovenstaande grafiek.
+
+### Is het verval voor alle graden even groot?
+
+Uit bovenstaande grafiek lijkt het erop dat het **verval groter** is **naarmate de graden stijgen**. 
+
+
+Als we er van uitgaan dat het verschil in moeilijkheid tussen iedere graad constant blijft^[Wellicht een onrealistische aanname, gezien de subjectiviteit inherent aan graden. Maar hier kunnen we die wel maken, zolang we daarover duidelijk zijn.] kunnen we dit ook in getallen uitdrukken.
+
+We kunnen onder bovenstaande aanname iedere graad een numerieke waarde geven en vervolgens een lineair model fitten^[Nogmaals, dit is louter verkennend bedoeld. Zie ook [woord vooraf](https://vragenlijst-klimmen.netlify.app/posts/2020-12-23-resultaten-enqute-deel-1-portret-van-de-deelnemers/#woord-vooraf) van het eerste deel.]. 
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Indoor_OS_toprope, Indoor_RP_toprope) %>%
+  ggplot(aes(Indoor_RP_toprope, Indoor_OS_toprope)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Indoor_OS_toprope)) +
+  scale_x_discrete(limits = levels(klim$Indoor_RP_toprope)) +
+  geom_smooth(inherit.aes = F, mapping = aes(x=as.numeric(Indoor_RP_toprope), y = as.numeric(Indoor_OS_toprope)), method = "lm", color =house_color, alpha=0.1, size = 1) +
+  theme(legend.position = "bottom") +
+  labs(x = "Indoor toprope: Redpoint",
+       y = "Indoor toprope: On sight",
+       size = "Aantal klimmers") 
+```
+
+De **groene lijn**, als grafische voorstelling van het model, geeft **het verwachte OS top rope niveau** weer **voor een gegeven RP top rope niveau**.
+
+We zien inderdaad dat de lijn met stijgende moeilijkheidsgraad steeds verder weg zakt van de oranje identiteitslijn (OS graad = RP graad). Met andere woorden wordt het verwachte **verval tussen RP en OS groter met stijgende moeilijkheidsgraad**.
+
+Per volledige cijfergraad wordt het verwachte verval één graad groter.
+
+Voor een **RP niveau** van **6b** is het verwachte verval **1 graad**, oftewel het verwacht **OS niveau** van **6a+**. Voor een **RP niveau** van **7b** is het verwachte verval **2 graden**, en het verwachte **OS niveau** dus **7a**.
+
+***
+
+Dezelfde visualisaties hebben we gemaakt voor [Indoor lead](#IL), [Outdoor lead](#OL), [Indoor boulder](#IB), en [Outdoor boulder](#OB).
+
+## Indoor lead {#IL}
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samenhang]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Indoor_OS_lead, Indoor_RP_lead) %>%
+  ggplot(aes(Indoor_RP_lead, Indoor_OS_lead)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Indoor_OS_lead)) +
+  scale_x_discrete(limits = levels(klim$Indoor_RP_lead)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Indoor lead: Redpoint",
+       y = "Indoor lead: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+::: {.panel}
+
+[Met model]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Indoor_OS_lead, Indoor_RP_lead) %>%
+  ggplot(aes(Indoor_RP_lead, Indoor_OS_lead)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Indoor_OS_lead)) +
+  scale_x_discrete(limits = levels(klim$Indoor_RP_lead)) +
+  geom_smooth(inherit.aes = F, mapping = aes(x=as.numeric(Indoor_RP_lead), y = as.numeric(Indoor_OS_lead)), method = "lm", color =house_color, alpha=0.1, size = 1) +
+  theme(legend.position = "bottom") +
+  labs(x = "Indoor lead: Redpoint",
+       y = "Indoor lead: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+:::::
+
+```{r}
+rp_os(Indoor_RP_lead, Indoor_OS_lead)
+```
+
+
+## Outdoor lead {#OL}
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samenhang]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Outdoor_OS_lead, Outdoor_RP_lead) %>%
+  ggplot(aes(Outdoor_RP_lead, Outdoor_OS_lead)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Outdoor_OS_lead)) +
+  scale_x_discrete(limits = levels(klim$Outdoor_RP_lead)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Outdoor lead: Redpoint",
+       y = "Outdoor lead: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+::: {.panel}
+
+[Met model]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Outdoor_OS_lead, Outdoor_RP_lead) %>%
+  ggplot(aes(Outdoor_RP_lead, Outdoor_OS_lead)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Outdoor_OS_lead)) +
+  scale_x_discrete(limits = levels(klim$Outdoor_RP_lead)) +
+  geom_smooth(inherit.aes = F, mapping = aes(x=as.numeric(Outdoor_RP_lead), y = as.numeric(Outdoor_OS_lead)), method = "lm", color =house_color, alpha=0.1, size = 1) +
+  theme(legend.position = "bottom") +
+  labs(x = "Outdoor lead: Redpoint",
+       y = "Outdoor lead: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+:::::
+
+```{r}
+rp_os(Outdoor_RP_lead, Outdoor_OS_lead, rev=TRUE)
+```
+
+## Indoor boulder {#IB}
+
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samenhang]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Indoor_OS_boulder, Indoor_RP_boulder) %>%
+  ggplot(aes(Indoor_RP_boulder, Indoor_OS_boulder)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Indoor_OS_boulder)) +
+  scale_x_discrete(limits = levels(klim$Indoor_RP_boulder)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Indoor boulder: Redpoint",
+       y = "Indoor boulder: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+::: {.panel}
+
+[Met model]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Indoor_OS_boulder, Indoor_RP_boulder) %>%
+  ggplot(aes(Indoor_RP_boulder, Indoor_OS_boulder)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Indoor_OS_boulder)) +
+  scale_x_discrete(limits = levels(klim$Indoor_RP_boulder)) +
+  geom_smooth(inherit.aes = F, mapping = aes(x=as.numeric(Indoor_RP_boulder), y = as.numeric(Indoor_OS_boulder)), method = "loess", n = 4, color =house_color, alpha=0.1, size = 1) +
+  theme(legend.position = "bottom") +
+  labs(x = "Indoor boulder: Redpoint",
+       y = "Indoor boulder: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+:::::
+
+```{r}
+rp_os(Indoor_RP_boulder, Indoor_OS_boulder)
+```
+
+## Outdoor boulder {#OB}
+
+
+
+::::: {.panelset}
+
+::: {.panel}
+
+[Samenhang]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Outdoor_OS_boulder, Outdoor_RP_boulder) %>%
+  ggplot(aes(Outdoor_RP_boulder, Outdoor_OS_boulder)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Outdoor_OS_boulder)) +
+  scale_x_discrete(limits = levels(klim$Outdoor_RP_boulder)) +
+  theme(legend.position = "bottom") +
+  labs(x = "Outdoor boulder: Redpoint",
+       y = "Outoor boulder: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+::: {.panel}
+
+[Met model]{.panel-name}
+
+```{r, fig.height=5}
+klim %>%
+  drop_na(Outdoor_OS_boulder, Outdoor_RP_boulder) %>%
+  ggplot(aes(Outdoor_RP_boulder, Outdoor_OS_boulder)) +
+  theme_bw() +
+  geom_abline(intercept = 0, slope = 1, color = house_color2) +
+  scale_fill_gradient(low = "#eeeeee", high = "red") +
+  geom_count(show.legend = F) +
+  scale_y_discrete(limits = levels(klim$Outdoor_OS_boulder)) +
+  scale_x_discrete(limits = levels(klim$Outdoor_RP_boulder)) +
+  geom_smooth(inherit.aes = F, mapping = aes(x=as.numeric(Outdoor_RP_boulder), y = as.numeric(Outdoor_OS_boulder)), method = "lm", color =house_color, alpha=0.1, size = 1) +
+  theme(legend.position = "bottom") +
+  labs(x = "Outdoor boulder: Redpoint",
+       y = "Outdoor boulder: On sight",
+       size = "Aantal klimmers") 
+```
+
+:::
+
+:::::
+
+
+
+```{r}
+rp_os(Outdoor_RP_boulder, Outdoor_OS_boulder, rev=TRUE)
+```
+
+## Wordt vervolgd...
+
+De volgende keer maken we de vergelijking tussen top rope, lead, en boulderen.
